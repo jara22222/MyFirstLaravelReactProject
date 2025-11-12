@@ -10,7 +10,7 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "types": "tsc --noEmit",
-        "dev:all": "concurrently \"npm run start\" \"npm run dev\""
+        "dev:all": "echo 'DO NOT USE IN PRODUCTION'"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
