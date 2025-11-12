@@ -5,7 +5,12 @@ FROM node:20-bullseye AS frontend
 
 WORKDIR /app
 
-# Install dependencies
+# Install build tools for npm packages
+RUN apt-get update && apt-get install -y \
+    build-essential python3 curl git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
