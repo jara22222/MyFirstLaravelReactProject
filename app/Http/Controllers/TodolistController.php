@@ -6,6 +6,7 @@ use App\Http\Requests\TodolistRequest;
 use App\Models\Todolist;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class TodolistController extends Controller
 {
@@ -35,13 +36,47 @@ class TodolistController extends Controller
     public function store(TodolistRequest $request)
     {
     try {
-            $todo = Todolist::create($request->validated());
 
-         return redirect()
-            ->route('todolist')
-            ->with('success', 'Todo created successfully!');
+
+                $isValidated = $request->validated();
+
+
+        
+                $checkTitle = Todolist::
+                    where('title', '=', $isValidated['title'])->exists();
+
+                $checkDescription = Todolist::
+                    where('description', '=', $isValidated['description'])->exists();
+
+              
+                if ($checkTitle) {
+                    Log::error("Title already exists: " . $isValidated['title']);
+                    return redirect()
+                        ->route('todolist')
+                        ->with('titleError', 'Title already exists. Please choose a different title.');
+
+                }
+
+                if ($checkDescription) {
+                    Log::error("Description already exists: " . $isValidated['description']);
+                    return redirect()
+                        ->route('todolist')
+                        ->with('descriptionError', 'Description already exists. Please choose a different description.');
+                }
+
+                if (!$checkTitle && !$checkDescription) {
+                 
+                    Todolist::create($request->validated());
+                    return redirect()
+                        ->route('todolist')
+                        ->with('success', 'Todo updated successfully!');
+
+
+                }
+         
+
         } catch (\Throwable $th) {
-            \Log::error($th->getMessage());
+            Log::error($th->getMessage());
 
              return redirect()
             ->route('todolist')
@@ -71,15 +106,50 @@ class TodolistController extends Controller
     public function update(TodolistRequest $request,  $id)
     {
         try {
-            //code...
-            $list = Todolist::find($id);
-            $list->update();
-      
-             return redirect()
-            ->route('todolist')
-            ->with('success', 'Todo deleted successfully!');
+            
+            $isValidated = $request->validated();
+           
+            $list = Todolist::findOrFail($id);
+
+
+            if ($list) {
+
+
+                $checkTitle = Todolist::
+                    where('title', '=', $isValidated['title'])->exists();
+
+                $checkDescription = Todolist::
+                    where('description', '=', $isValidated['description'])->exists();
+
+              
+                if ($checkTitle) {
+                    Log::error("Title already exists: " . $list->title);
+                    return redirect()
+                        ->route('todolist')
+                        ->with('error', 'Title already exists. Please choose a different title.');
+
+                }
+
+                if ($checkDescription) {
+                    Log::error("Description already exists: " . $list->description);
+                    return redirect()
+                        ->route('todolist')
+                        ->with('error', 'Description already exists. Please choose a different description.');
+                }
+
+                if (!$checkTitle && !$checkDescription) {
+                    $list->update($isValidated);
+                    $list->save();
+                    return redirect()
+                        ->route('todolist')
+                        ->with('success', 'Todo updated successfully!');
+
+
+                }
+            }
+            
         } catch (\Throwable $th) {
-             \Log::error($th->getMessage());
+             Log::error($th->getMessage());
                return redirect()
             ->route('todolist')
             ->with('error', 'Something went wrong. Please try again.');
@@ -93,14 +163,14 @@ class TodolistController extends Controller
     {
         try {
             //code...
-            $list = Todolist::find($id);
+            $list = Todolist::findOrFail($id);
             $list->delete();
             
              return redirect()
             ->route('todolist')
             ->with('success', 'Todo deleted successfully!');
         } catch (\Throwable $th) {
-             \Log::error($th->getMessage());
+             Log::error($th->getMessage());
                return redirect()
             ->route('todolist')
             ->with('error', 'Something went wrong. Please try again.');

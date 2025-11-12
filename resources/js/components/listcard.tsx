@@ -12,8 +12,10 @@ export default function Listcard(props: {
     title: any;
     description: any;
     id: any;
+    pressed: (value: boolean) => void;
+    editF: (id: any, title: any, description: any) => void;
 }) {
-    const { title, description, id } = props;
+    const { title, description, id, pressed, editF } = props;
 
     return (
         <div className="flex flex-col justify-center gap-2 rounded border-l-8 border-emerald-600 p-2 shadow">
@@ -27,11 +29,17 @@ export default function Listcard(props: {
                                 <Menu size={15} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                        pressed(true);
+                                        editF(id, title, description);
+                                    }}
+                                >
                                     <Edit className="text-amber-600" />
                                     Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem className="cursor-pointer">
                                     <Form
                                         {...TodolistController.destroy.form(id)}
                                         disableWhileProcessing
@@ -40,7 +48,7 @@ export default function Listcard(props: {
                                             <button
                                                 disabled={processing}
                                                 type="submit"
-                                                className="flex gap-2"
+                                                className="flex cursor-pointer gap-2"
                                             >
                                                 <Trash className="text-red-600" />
                                                 Delete

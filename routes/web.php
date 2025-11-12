@@ -21,7 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //greetings route's contoller call
     Route::resource('greetings', UserController::class, )//doesn't work for index,create,store
         ->middleware('throttle:greetings-limit')->missing(function (Request $req) {
-            return Redirect::route('greetings.index');//return to the greetings page if some req does not exist
+            return Inertia::route('greetings.index');//return to the greetings page if some req does not exist
     });
 
     //parametered route
@@ -32,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('todolist',  [TodolistController::class,'index'])->name('todolist');
     Route::post('todolist',  [TodolistController::class,'store'])->name('todolist.store');
     Route::delete('todolist/{id}', [TodolistController::class,'destroy'])->name('todolist.destroy');
+    Route::patch('todolist/{id}', [TodolistController::class,'update'])->name('todolist.update'); 
   //todolists router
    
     //fallback for all routes

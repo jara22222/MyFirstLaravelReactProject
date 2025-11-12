@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('todolists', function (Blueprint $table) {
             $table->char('id', 26)->primary();
-            $table->string('Title');
-            $table->string('Description');
+            $table->string('Title')->unique();
+            $table->string('Description')->unique();
             $table->timestamps();
         });
     }
