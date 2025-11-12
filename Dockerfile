@@ -17,25 +17,34 @@ RUN apt-get update && apt-get install -y \
     npm \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
+# Increase PHP memory limit
+RUN echo "memory_limit=1G" > /usr/local/etc/php/conf.d/memory-limit.ini
+
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy project files
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-interaction --optimize-autoloader
+# Install PHP dependencies with memory optimizations
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist
+
+# Set Node memory limit to 1GB to prevent OOM
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 
 # Install Node dependencies
-RUN npm install
+RUN npm ci --only=production
+
+# Build React app
+RUN npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage
 
-# Expose port (you can adjust to match your dev server port)
+# Expose ports (Laravel & Vite)
 EXPOSE 5173  
 EXPOSE 8000  
 
-# Run your custom npm command when container starts
-CMD ["npm", "run", "dev:all"]
+# Use Laravel’s artisan serve or Vite server
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
