@@ -34,8 +34,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage
 
 # Expose port (you can adjust to match your dev server port)
-EXPOSE 5173  # Vite default
-EXPOSE 8000  # Laravel dev server
+EXPOSE 5173  
+EXPOSE 8000  
 
 # Run your custom npm command when container starts
 CMD ["npm", "run", "dev:all"]
