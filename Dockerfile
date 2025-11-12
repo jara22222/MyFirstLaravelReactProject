@@ -1,5 +1,6 @@
 # ========= STAGE 3: Final Runtime =========
 FROM php:8.2-fpm-alpine
+RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
 
 # Install minimal build deps + libraries needed for gd + pdo_mysql
 RUN apk add --no-cache \
