@@ -6,26 +6,22 @@ WORKDIR /var/www
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install Node.js dependencies with legacy peer deps
+# Install Node.js dependencies
 RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application
 COPY . .
 
-# Set environment variable to skip Wayfinder generation
+# Build assets with Wayfinder generation disabled
 ENV VITE_SKIP_WAYFINDER_GENERATE=1
-
-# Build assets with debug output
-RUN npm run build -- --debug || { \
-    echo "Build failed, but continuing with the build process..."; \
-    exit 0; \
-}
+RUN npm run build
 
 # Stage 2: Build the application
 FROM php:8.2-fpm
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     git \
     curl \
     libpng-dev \
@@ -78,10 +74,6 @@ RUN if [ ! -f .env ]; then \
         cp .env.example .env && \
         php artisan key:generate; \
     fi
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s \
-    CMD curl -f http://localhost/health || exit 1
 
 # Expose port 80 and run supervisord
 EXPOSE 80
