@@ -1,23 +1,4 @@
-# Stage 1: Build assets
-FROM node:20 AS node
-
-WORKDIR /var/www
-
-# Copy package files
-COPY package.json package-lock.json ./
-
-# Install Node.js dependencies
-RUN npm install --legacy-peer-deps
-
-# Copy the rest of the application
-COPY . .
-
-# Build assets with Wayfinder generation disabled
-ENV VITE_SKIP_WAYFINDER_GENERATE=1
- # Print versions for debugging and ensure production mode
-RUN node -v && npm -v && npx vite --version || true
-ENV NODE_ENV=production
-RUN npm run build -- --logLevel info
+# Build and runtime in single PHP stage
 
 # Stage 2: Build the application
 FROM php:8.2-fpm
@@ -53,11 +34,20 @@ WORKDIR /var/www
 # Copy application files
 COPY --chown=www-data:www-data . .
 
-# Copy built assets from node stage
-COPY --from=node --chown=www-data:www-data /var/www/public/build ./public/build
-
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Prepare environment for artisan before frontend build
+RUN [ -f .env ] || cp .env.example .env ; \
+    php artisan key:generate --force || true
+
+# Build frontend assets inside PHP stage (Wayfinder can call PHP here)
+RUN node -v && npm -v && npx vite --version || true
+ENV NODE_ENV=production
+RUN mkdir -p resources/js/routes && \
+    php artisan wayfinder:generate --with-form
+RUN npm install --legacy-peer-deps && \
+    npm run build -- --logLevel info
 
 # Configure Nginx
 RUN mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled && \
@@ -71,12 +61,6 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Set permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
     chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-# Generate application key if not exists
-RUN if [ ! -f .env ]; then \
-        cp .env.example .env && \
-        php artisan key:generate; \
-    fi
 
 # Expose port 80 and run supervisord
 EXPOSE 80

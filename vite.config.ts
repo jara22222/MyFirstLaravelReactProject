@@ -18,15 +18,13 @@ const plugins: any[] = [
     tailwindcss(),
 ];
 
-// ✅ Only include Wayfinder locally (not on Vercel or production)
-if (!isVercel && !isProduction) {
-    const { wayfinder } = await import('@laravel/vite-plugin-wayfinder');
-    plugins.push(
-        wayfinder({
-            formVariants: true,
-        }),
-    );
-}
+// Enable Wayfinder so '@/routes' and route helpers are generated during build
+const { wayfinder } = await import('@laravel/vite-plugin-wayfinder');
+plugins.push(
+    wayfinder({
+        formVariants: true,
+    }),
+);
 
 export default defineConfig({
     plugins,
