@@ -14,7 +14,10 @@ COPY . .
 
 # Build assets with Wayfinder generation disabled
 ENV VITE_SKIP_WAYFINDER_GENERATE=1
-RUN npm run build
+ # Print versions for debugging and ensure production mode
+RUN node -v && npm -v && npx vite --version || true
+ENV NODE_ENV=production
+RUN npm run build -- --logLevel info
 
 # Stage 2: Build the application
 FROM php:8.2-fpm

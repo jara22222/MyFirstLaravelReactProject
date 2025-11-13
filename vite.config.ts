@@ -11,7 +11,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const plugins: any[] = [
     laravel({
         input: ['resources/css/app.css', 'resources/js/app.tsx'],
-        ssr: 'resources/js/ssr.tsx',
+        ssr: isProduction ? undefined : 'resources/js/ssr.tsx',
         refresh: true,
     }),
     react(),
