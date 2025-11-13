@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: laravel-react-app
+    env: docker
+    plan: free
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: CACHE_DRIVER
+        value: file
+      - key: SESSION_DRIVER
+       : file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: NODE_ENV
+        value: production
+    buildCommand: |
+      ./build.sh
+    startCommand: |
+      ./start.sh
+
+# Uncomment and configure these if you need a PostgreSQL database
+# databases:
+#   - name: laravel-db
+#     databaseName: laravel
+#     user: laravel
+#     plan: free
