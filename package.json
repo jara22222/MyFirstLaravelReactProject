@@ -4,6 +4,7 @@
     "scripts": {
         "start": "php artisan serve",
         "build": "vite build",
+        "vercel-build": "VITE_SKIP_WAYFINDER_GENERATE=1 vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
