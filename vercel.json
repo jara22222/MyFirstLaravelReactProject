@@ -1,0 +1,10 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": "public",
+    "ignoreCommand": "php artisan wayfinder:generate",
+    "env": {
+        "NODE_ENV": "production"
+    },
+    "installCommand": "npm install",
+    "framework": null
+}

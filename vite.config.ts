@@ -1,34 +1,35 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig } from 'vite';
 
-// Import only when PHP is available (locally)
-let wayfinderPlugin: Plugin<any>[] = [];
-if (process.env.NODE_ENV !== 'production') {
-    try {
-        const { wayfinder } = await import('@laravel/vite-plugin-wayfinder');
-        wayfinderPlugin = [
-            wayfinder({
-                formVariants: true,
-            }),
-        ];
-    } catch (e) {
-        console.warn('Wayfinder not loaded: PHP may not be available.');
-    }
+// Detect if running on Vercel
+const isVercel = process.env.VERCEL === '1';
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Plugins that always load
+const plugins: any[] = [
+    laravel({
+        input: ['resources/css/app.css', 'resources/js/app.tsx'],
+        ssr: 'resources/js/ssr.tsx',
+        refresh: true,
+    }),
+    react(),
+    tailwindcss(),
+];
+
+// ✅ Only include Wayfinder locally (not on Vercel or production)
+if (!isVercel && !isProduction) {
+    const { wayfinder } = await import('@laravel/vite-plugin-wayfinder');
+    plugins.push(
+        wayfinder({
+            formVariants: true,
+        }),
+    );
 }
 
 export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            ssr: 'resources/js/ssr.tsx',
-            refresh: true,
-        }),
-        react(),
-        tailwindcss(),
-        ...wayfinderPlugin, // 👈 only added if local
-    ],
+    plugins,
     esbuild: {
         jsx: 'automatic',
     },
