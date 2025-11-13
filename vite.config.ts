@@ -13,9 +13,15 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        wayfinder({
-            formVariants: true,
-        }),
+
+        // 👇 Only run Wayfinder locally (skip in production/Vercel)
+        ...(process.env.NODE_ENV !== 'production'
+            ? [
+                  wayfinder({
+                      formVariants: true,
+                  }),
+              ]
+            : []),
     ],
     esbuild: {
         jsx: 'automatic',
