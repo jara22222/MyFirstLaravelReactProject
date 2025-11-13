@@ -1,33 +1,48 @@
 services:
-  - type: web
-    name: laravel-react-app
-    env: docker
-    plan: free
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: "false"
-      - key: APP_KEY
-        generateValue: true
-      - key: APP_URL
-        sync: false
-      - key: DB_CONNECTION
-        value: pgsql
-      - key: CACHE_DRIVER
-        value: file
-      - key: SESSION_DRIVER
-       : file
-      - key: QUEUE_CONNECTION
-        value: sync
-      - key: NODE_ENV
-        value: production
-    buildCommand: |
-      ./build.sh
-    startCommand: |
-      ./start.sh
+    - type: web
+      name: laravel-react-app
+      env: node
+      plan: free
+      buildCommand: |
+          # Install PHP dependencies
+          composer install --no-dev --optimize-autoloader --no-interaction
 
-# Uncomment and configure these if you need a PostgreSQL database
+          # Install Node.js dependencies
+          npm install
+
+          # Build assets with Wayfinder generation disabled
+          VITE_SKIP_WAYFINDER_GENERATE=1 npm run build
+
+          # Generate application key
+          php artisan key:generate --force
+          php artisan storage:link
+
+      startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
+
+      envVars:
+          - key: APP_ENV
+            value: production
+          - key: APP_DEBUG
+            value: 'false'
+          - key: APP_KEY
+            generateValue: true
+          - key: APP_URL
+            sync: true
+          - key: VITE_APP_URL
+            sync: true
+          - key: DB_CONNECTION
+            value: sqlite
+          - key: CACHE_DRIVER
+            value: file
+          - key: SESSION_DRIVER
+            value: file
+          - key: SESSION_LIFETIME
+            value: '120'
+          - key: QUEUE_CONNECTION
+            value: sync
+          - key: NODE_ENV
+            value: production
+# Uncomment and configure if you need a database
 # databases:
 #   - name: laravel-db
 #     databaseName: laravel
