@@ -1,4 +1,22 @@
-# Use the official PHP image with FPM
+# Stage 1: Build assets
+FROM node:20 AS node
+
+WORKDIR /var/www
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install Node.js dependencies
+RUN npm ci --no-audit --prefer-offline
+
+# Copy the rest of the application
+COPY . .
+
+# Build assets
+ENV VITE_SKIP_WAYFINDER_GENERATE=1
+RUN npm run build
+
+# Stage 2: Build the application
 FROM php:8.2-fpm
 
 # Install system dependencies
@@ -13,15 +31,11 @@ RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
     gnupg2 \
-    ca-certificates
-
-# Install Node.js 18.x LTS
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    ca-certificates && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
-    npm install -g npm@latest
-
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
@@ -32,39 +46,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy package files first for better caching
-COPY package.json package-lock.json ./
+# Copy application files
+COPY --chown=www-data:www-data . .
 
-# Install Node.js dependencies with fallback
-RUN echo "Installing Node.js dependencies..." && \
-    npm ci --no-audit --prefer-offline --loglevel verbose || { \
-        echo "npm ci failed, falling back to npm install..." && \
-        npm install --no-audit --loglevel verbose; \
-    }
+# Copy built assets from node stage
+COPY --from=node --chown=www-data:www-data /var/www/public/build ./public/build
 
-# Copy composer files and install PHP dependencies
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --verbose
-
-# Copy the rest of the application
-COPY . .
-
-# Set environment variable to skip Wayfinder generation
-ENV VITE_SKIP_WAYFINDER_GENERATE=1
-
-# Build assets with debug output
-RUN echo "Building assets..." && \
-    npm run build -- --debug || { \
-        echo "Build failed, but continuing with the build process..."; \
-        exit 0; \
-    } && \
-    npm cache clean --force
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Configure Nginx
-RUN mkdir -p /etc/nginx/sites-available && \
-    mkdir -p /etc/nginx/sites-enabled
+RUN mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled && \
+    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 COPY docker/nginx/nginx.conf /etc/nginx/sites-available/default
-RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
 # Configure supervisor
 RUN mkdir -p /var/log/supervisor
@@ -79,6 +73,10 @@ RUN if [ ! -f .env ]; then \
         cp .env.example .env && \
         php artisan key:generate; \
     fi
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD curl -f http://localhost/health || exit 1
 
 # Expose port 80 and run supervisord
 EXPOSE 80
